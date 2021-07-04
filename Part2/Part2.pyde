@@ -12,6 +12,7 @@
 # Centro de Informatica - UFPE 2021.1 (Pos-Graduacao)
 # Introducao a Agentes Inteligentes
 
+from A_star import search
 from Path import Path
 from Vehicle import Vehicle
 import random
@@ -182,8 +183,7 @@ def setup():
     global path_next_target
     
     size(map_size, map_size)
-
-    build_path([(0,0), (1,0), (1,1), (2,1), (2,2), (3,2), (3,3), (4,3), (4,4), (4,5), (4,6), (4,7), (4,8), (4,9), (4,10)])
+    build_path(search(map_matrix, (0,0), (4,10)))
     
     path_next_target = path.points[path_index]
     path_index = path_index + 1

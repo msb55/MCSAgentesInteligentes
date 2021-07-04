@@ -1,0 +1,70 @@
+frontier = []
+explored_set = []
+
+actions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+
+class Node():
+    def __init__(self, state, parent=None, action=None, cost=0):
+        self.state = state
+        self.parent = parent
+        self.cost = cost
+
+    def __str__(self):
+        return str(self.state)
+
+
+def search(map, agent_position, food_position):
+    frontier.append((0, Node(state=agent_position)))
+
+    while True:    
+        node = frontier.pop(0)[1]
+        if goal_test(node, food_position):
+            return solution(node)
+
+        else:
+            expand_node(map, node, agent_position)
+            if not frontier:
+                raise Exception("Solucao nao encontrada")
+
+def path_cost(agent_position, current_position):
+    return (abs(agent_position[0] - current_position[0]) +
+            abs(agent_position[1] - current_position[1]))
+
+def energy_cost(map, current_position):
+    ground_cost = {
+               0: 0,
+               1: 999,
+               2: 5,
+               3: 10,
+               4: 20
+               }
+    return ground_cost[map[current_position[0]][current_position[1]]]
+    
+
+def goal_test(node, food_position):
+    return node.state == food_position
+
+def solution(node):
+    solution_path = []
+    while node:
+            solution_path.insert(0, node.state)
+            node = node.parent
+    return solution_path
+
+def expand_node(map, node, agent_position):
+    global frontier
+    global explored_set
+
+    for action in actions:
+        state = (node.state[0] + action[0], node.state[1] + action[1])
+        if check_valid_node(state, map):
+            explored_set.append(state)
+            cost = path_cost(agent_position, state) + energy_cost(map, state)
+            frontier.append((cost, Node(state, node, cost)))
+    frontier = sorted(frontier, key=lambda x: x[0])
+
+def check_valid_node(state, map):
+    return (0<=state[0]<len(map) and 
+            0<=state[1]<len(map) and 
+            state not in explored_set)
