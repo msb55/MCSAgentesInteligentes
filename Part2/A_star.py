@@ -14,7 +14,16 @@ class Node():
         return str(self.state)
 
 
+def init_search():
+    global frontier
+    global explored_set
+
+    explored_set = []
+    frontier = []
+
+
 def search(map, agent_position, food_position):
+    init_search()
     frontier.append((0, Node(state=agent_position)))
 
     while True:    

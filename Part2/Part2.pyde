@@ -12,7 +12,7 @@
 # Centro de Informatica - UFPE 2021.1 (Pos-Graduacao)
 # Introducao a Agentes Inteligentes
 
-from A_star import search
+import A_star
 from Path import Path
 from Vehicle import Vehicle
 import random
@@ -95,8 +95,12 @@ ground_color = {
                 }
 
 # Global variables for target location in map
-target_x = 4
-target_y = 10
+target_x = None
+target_y = None
+
+# Global variables for agent location in map
+agent_x = None
+agent_y = None
 
 
 # Checks distance difference of two given points on map (using epsilon)
@@ -122,16 +126,70 @@ def position_to_coordinate(x, y):
     return x_calc, y_calc
 
 
+# Generates randomly a position in map
+def generate_random_position():
+    return random.randint(0, len(map_matrix)-1), random.randint(0, len(map_matrix)-1)
+
+
+# Generates randomly a VALID position in map
+def generate_valid_position():
+    x, y = generate_random_position()
+    while map_matrix[x][y] == 1:
+        x, y = generate_random_position()
+
+    return x, y
+
+
+# Checks if the agent is valid
+def is_agent_valid():
+    return agent is not None and agent.position is not None
+
+
+# Checks if the target is valid
+def is_target_valid():
+    return target_x is not None and target_y is not None and (0 >= target_x < len(map_matrix)) and (0 >= target_y < len(map_matrix))
+
+
 # Updates the global variables of the target position to a valid one (not into a obstacle and not in the same position as agent)
 def update_target_position():
     global target_x
     global target_y
     
-    while map_matrix[target_x][target_y] == 1 or arrived(agent.position.x, agent.position.y, *position_to_coordinate(target_x, target_y)):
+    target_x, target_y = generate_valid_position()
+    while is_agent_valid() and arrived(agent.position.x, agent.position.y, *position_to_coordinate(target_x, target_y)):
         target_x = random.randint(0, len(map_matrix)-1)
         target_y = random.randint(0, len(map_matrix)-1)
         
     print('Target coordinates: ', target_x, target_y)
+    
+
+# Updates the global variables of the agent position to a valid one (not into a obstacle and not in the same position as target)
+def update_agent_position():
+    global agent
+    global agent_x
+    global agent_y
+
+    agent_x, agent_y = generate_valid_position()    
+    while is_target_valid() and arrived(agent_x, agent_y, *position_to_coordinate(target_x, target_y)):
+        agent_x, agent_y = generate_valid_position()
+    
+    agent = Vehicle(*position_to_coordinate(agent_x, agent_y))
+    print('Agent coordinates: ', agent_x, agent_y)
+
+
+# Draws the search evolution: frontier nodes (in blue border) and explored nodes (in red border)
+def draw_search():
+    for _, frontier_node in A_star.frontier:
+        x, y = frontier_node.state[0], frontier_node.state[1]
+        noFill()
+        stroke(0, 255 , 0)
+        rect(x*floor_size, y*floor_size, floor_size, floor_size, 2)
+        
+    for explored_node in A_star.explored_set:
+        x, y = explored_node[0], explored_node[1]
+        noFill()
+        stroke(255, 0, 0)
+        rect(x*floor_size, y*floor_size, floor_size, floor_size, 2)
 
 
 # Draw the target star-based symbol in map
@@ -164,16 +222,19 @@ def draw_target():
 # Build a Path using positions (based on map)
 def build_path(positions):
     global path
-    
-    # A path is a series of connected points
-    # A more sophisticated path might be a curve
+    global path_index
+    global path_next_target
+
     path = Path()
     
     for x, y in positions:
         x_calc, y_calc = position_to_coordinate(x, y)
         path.addPoint(x_calc, y_calc)
+        
+    path_next_target = path.points[0]
+    path_index = 1
 
-    print('Path coordinates: ', path.points)
+    print('Path coordinates: ', positions)
 
 
 def setup():
@@ -183,19 +244,18 @@ def setup():
     global path_next_target
     
     size(map_size, map_size)
-    build_path(search(map_matrix, (0,0), (4,10)))
     
-    path_next_target = path.points[path_index]
-    path_index = path_index + 1
+    update_target_position()
+    update_agent_position()
     
-    agent = Vehicle(path_next_target.x, path_next_target.y)
+    build_path(A_star.search(map_matrix, (agent_x, agent_y), (target_x, target_y)))
 
 
 def draw():
-    global agent
     global path_index
-    global path
     global path_next_target
+    global agent_x
+    global agent_y
     
     background(255)
     noStroke()
@@ -203,6 +263,7 @@ def draw():
     draw_map()
     path.display()
     draw_target()
+    draw_search()
     
     agent.arrive(path_next_target)
     agent.update()
@@ -217,6 +278,7 @@ def draw():
     # Check if agent reach its goal
     x_calc, y_calc = position_to_coordinate(target_x, target_y)
     if arrived(agent.position.x, agent.position.y, x_calc, y_calc):
-        # Target should reappear in a new random location 
+        agent_x, agent_y = target_x, target_y
         update_target_position()
+        build_path(A_star.search(map_matrix, (agent_x, agent_y), (target_x, target_y)))
     
