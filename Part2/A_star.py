@@ -4,11 +4,13 @@ explored_set = []
 actions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
-class Node():
-    def __init__(self, state, parent=None, action=None, cost=0):
+class Node(): Node(state, node, energy_cost(map, state), path_cost(agent_position, state))
+    def __init__(self, state, parent=None, energy_cost=0, path_cost=0):
         self.state = state
         self.parent = parent
-        self.cost = cost
+        self.energy_cost = energy_cost
+        self.path_cost = path_cost
+        self.cost = energy_cost + path_cost
 
     def __str__(self):
         return str(self.state)
@@ -28,6 +30,8 @@ def search(map, agent_position, food_position):
 
     while True:    
         node = frontier.pop(0)[1]
+        explored_set.append(node.state)
+
         if goal_test(node, food_position):
             return solution(node)
 
@@ -68,13 +72,13 @@ def expand_node(map, node, agent_position):
     for action in actions:
         state = (node.state[0] + action[0], node.state[1] + action[1])
         if check_valid_node(state, map):
-            explored_set.append(state)
-            cost = path_cost(agent_position, state) + energy_cost(map, state)
-            frontier.append((cost, Node(state, node, cost)))
+            child_node = Node(state, node, energy_cost(map, state), path_cost(agent_position, state))
+            frontier.append((child_node.cost, child_node))
     frontier = sorted(frontier, key=lambda x: x[0])
 
 def check_valid_node(state, map):
     return (0<=state[0]<len(map) and 
             0<=state[1]<len(map) and 
             state not in explored_set and
+            state not in [node[1].state for node in frontier] and
             map[state[0]][state[1]] != 1)
