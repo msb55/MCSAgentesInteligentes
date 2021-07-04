@@ -178,17 +178,15 @@ def update_agent_position():
 
 
 # Draws the search evolution: frontier nodes (in blue border) and explored nodes (in red border)
-def draw_search():
+def draw_search():    
+    for explored_node in A_star.explored_set:
+        x, y = position_to_coordinate(explored_node[0], explored_node[1])
+        text('X', x-3, y+5)
+
     for _, frontier_node in A_star.frontier:
         x, y = frontier_node.state[0], frontier_node.state[1]
         noFill()
         stroke(0, 255 , 0)
-        rect(x*floor_size, y*floor_size, floor_size, floor_size, 2)
-        
-    for explored_node in A_star.explored_set:
-        x, y = explored_node[0], explored_node[1]
-        noFill()
-        stroke(255, 0, 0)
         rect(x*floor_size, y*floor_size, floor_size, floor_size, 2)
 
 

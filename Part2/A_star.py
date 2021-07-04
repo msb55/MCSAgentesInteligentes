@@ -76,4 +76,5 @@ def expand_node(map, node, agent_position):
 def check_valid_node(state, map):
     return (0<=state[0]<len(map) and 
             0<=state[1]<len(map) and 
-            state not in explored_set)
+            state not in explored_set and
+            map[state[0]][state[1]] != 1)
