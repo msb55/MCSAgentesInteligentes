@@ -27,11 +27,14 @@ def init_search():
 def search(map, agent_position, food_position):
     init_search()
     frontier.append((0, Node(state=agent_position)))
-
+    rodada = 0
     while True:    
         node = frontier.pop(0)[1]
         explored_set.append(node.state)
-
+        print("\n\nRodada " + str(rodada))
+        print("\nFronteira atual: " + str([(nodes[0], nodes[1].state) for nodes in frontier]))
+        print("\nNos ja visitados: " + str(explored_set))
+        rodada += 1
         if goal_test(node, food_position):
             return solution(node)
 
