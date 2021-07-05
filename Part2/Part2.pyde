@@ -33,6 +33,8 @@ agent = None
 # Distance difference epsilon (in pixels)
 epsilon = 5
 
+food_eaten_counter = 0
+
 # The map squared default size
 map_size = 660
 
@@ -178,7 +180,12 @@ def update_agent_position():
 
 
 # Draws the search evolution: frontier nodes (in blue border) and explored nodes (in red border)
-def draw_search():    
+def draw_search():
+    fill(255,255,255)
+    textFont(createFont("Arial", 16))
+    text('Food eaten: {}'.format(food_eaten_counter), 10, 30)
+
+    fill(255,0,0)
     for explored_node in A_star.explored_set:
         x, y = position_to_coordinate(explored_node[0], explored_node[1])
         text('X', x-3, y+5)
@@ -250,11 +257,13 @@ def setup():
 
 
 def draw():
+    global food_eaten_counter
     global path_index
     global path_next_target
     global agent_x
     global agent_y
     
+
     background(255)
     noStroke()
     
@@ -276,6 +285,7 @@ def draw():
     # Check if agent reach its goal
     x_calc, y_calc = position_to_coordinate(target_x, target_y)
     if arrived(agent.position.x, agent.position.y, x_calc, y_calc):
+        food_eaten_counter += 1
         agent_x, agent_y = target_x, target_y
         update_target_position()
         build_path(A_star.search(map_matrix, (agent_x, agent_y), (target_x, target_y)))
