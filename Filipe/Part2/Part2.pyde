@@ -162,7 +162,7 @@ def update_target_position():
         target_x = random.randint(0, len(map_matrix)-1)
         target_y = random.randint(0, len(map_matrix)-1)
         
-    print('Target coordinates: ', target_x, target_y)
+    # print('Target coordinates: ', target_x, target_y)
     
 
 # Updates the global variables of the agent position to a valid one (not into a obstacle and not in the same position as target)
@@ -176,7 +176,7 @@ def update_agent_position():
         agent_x, agent_y = generate_valid_position()
     
     agent = Vehicle(*position_to_coordinate(agent_x, agent_y))
-    print('Agent coordinates: ', agent_x, agent_y)
+    # print('Agent coordinates: ', agent_x, agent_y)
 
 
 # Draws the search evolution: frontier nodes (in blue border) and explored nodes (in red border)
@@ -239,7 +239,7 @@ def build_path(positions):
     path_next_target = path.points[0]
     path_index = 1
 
-    print('Path coordinates: ', positions)
+    print('Solucao: ', positions)
 
 
 def setup():
