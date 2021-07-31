@@ -691,3 +691,8 @@ def unmutePrint():
 
     sys.stdout = _ORIGINAL_STDOUT
     #sys.stderr = _ORIGINAL_STDERR
+
+
+def norm(lista):
+        return [i/(max(lista)+0.01) for i in lista]
+

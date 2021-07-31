@@ -16,8 +16,8 @@ import random
 
 import util
 from game import Agent, Directions
-from util import manhattanDistance
-
+from util import manhattanDistance, norm
+import numpy as np
 
 class ReflexAgent(Agent):
     """
@@ -43,12 +43,16 @@ class ReflexAgent(Agent):
         legalMoves = gameState.getLegalActions()
 
         # Choose one of the best actions
-        scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+        scores1, scores2 = [], []
+        for action in legalMoves:
+          score1, score2 = self.evaluationFunction(gameState, action)
+          scores1.append(score1)
+          scores2.append(score2)
+        scores = np.array(norm(scores1)) + np.array(norm(scores2))
+
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
-
-        "Add more of your code here if you want to"
 
         return legalMoves[chosenIndex]
 
@@ -70,12 +74,78 @@ class ReflexAgent(Agent):
         # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
-        newFood = successorGameState.getFood()
+        ghostsPos = successorGameState.getGhostPositions()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        foodScore = self.foodScore(currentGameState, action, newPos, 
+                                   successorGameState, ghostsPos, newScaredTimes)
+        ghostScore = self.ghostScore(currentGameState, action, newPos, 
+                                    successorGameState, ghostsPos)
+        return foodScore, ghostScore
+
+    def ghostScore(self, currentGameState, action, 
+                   newPos, successorGameState, ghostsPos):
+      """Busca se afastar do fantasma mais próximo"""
+      closest = self.closestGhost(newPos, ghostsPos)
+      return manhattanDistance(closest, newPos)
+      
+    def foodScore(self, currentGameState, action, newPos, successorGameState,
+                  ghostsPos, newScaredTimes):
+      """Busca se aproximar da comida ou capsula mais próxima do pacman e mais
+      afastada dos fantasmas. Quando há scaredTimer o comportamento busca e
+      o pacman busca alcançar o fantasma assustado mais próximo."""
+      actualPos = currentGameState.getPacmanPosition()
+      closestFood = self.closestFood(currentGameState, successorGameState, 
+                                     newScaredTimes)
+      isBetterPos = (manhattanDistance(closestFood, newPos) < 
+                    manhattanDistance(closestFood, actualPos))
+      return 1 if isBetterPos else 0
+
+
+    def closestFood(self, currentGameState, successorGameState, newScaredTimes):
+      """Calcular a comida mais próxima que está distante dos fantasmas"""
+      
+      # Checa se há fantasmas assustados
+      isScaredTimer = self.anyScaredTimer(newScaredTimes)
+
+      #Obtém posições
+      ghostsPos = successorGameState.getGhostPositions()
+      actualPos = currentGameState.getPacmanPosition()
+      foodPos = currentGameState.getFood().asList() + currentGameState.getCapsules()
+      foodPos = foodPos + ghostsPos if isScaredTimer else foodPos
+
+      # Calcula distâncias
+      pacman_distance = [manhattanDistance(f, actualPos) for f in foodPos]
+      ghost_distance = [self.foodDistanceGhosts(f, ghostsPos) for f in foodPos] 
+      
+      # Obtém o objetivo da próxima ação
+      if isScaredTimer:
+            # Se existir algum fantasma assustado persegue-o
+            closest = self.closestGhost(actualPos,  ghostsPos, newScaredTimes)
+      else:
+            # Se não, busca a comida mais próxima do pacman e distante do fantasma
+            total = list(np.array(pacman_distance) - np.array(ghost_distance))
+            closest = foodPos[total.index(min(total))]
+      
+      return closest
+
+    def closestGhost(self, newPos, ghostsPos, ghostScaredTimer=None):
+      distances = []
+      for index in range(len(ghostsPos)):
+        if not ghostScaredTimer or ghostScaredTimer[index] > 0:
+          distances.append(manhattanDistance(newPos, ghostsPos[index]))
+      return ghostsPos[distances.index(min(distances))]
+      
+    def anyScaredTimer(self, newScaredTimes):
+      return sum(newScaredTimes) > 0
+
+    def foodDistanceGhosts(self, foodPos, ghostsPos):
+      dist = [manhattanDistance(foodPos, ghostPos) for ghostPos in ghostsPos]
+      return sum(dist)/len(dist)
+
+    def foodDistanceClosestGhosts(self, foodPos, ghostsPos):
+      return min([manhattanDistance(foodPos, ghostPos) for ghostPos in ghostsPos])
 
 def scoreEvaluationFunction(currentGameState):
     """
