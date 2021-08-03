@@ -43,20 +43,15 @@ class ReflexAgent(Agent):
         legalMoves = gameState.getLegalActions()
 
         # Choose one of the best actions
-        scores1, scores2 = [], []
-        for action in legalMoves:
-          score1, score2 = self.evaluationFunction(gameState, action)
-          scores1.append(score1)
-          scores2.append(score2)
-        scores = np.array(norm(scores1)) + np.array(norm(scores2))
-
+        norm = self.ghostNorm(gameState, legalMoves)
+        scores = [self.evaluationFunction(gameState, action, norm) for action in legalMoves]
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
 
         return legalMoves[chosenIndex]
 
-    def evaluationFunction(self, currentGameState, action):
+    def evaluationFunction(self, currentGameState, action, norm):
         """
         Design a better evaluation function here.
 
@@ -82,11 +77,12 @@ class ReflexAgent(Agent):
                                    successorGameState, ghostsPos, newScaredTimes)
         ghostScore = self.ghostScore(currentGameState, action, newPos, 
                                     successorGameState, ghostsPos)
-        return foodScore, ghostScore
+        return foodScore+ghostScore/norm
 
     def ghostScore(self, currentGameState, action, 
                    newPos, successorGameState, ghostsPos):
       """Busca se afastar do fantasma mais próximo"""
+      
       closest = self.closestGhost(newPos, ghostsPos)
       return manhattanDistance(closest, newPos)
       
@@ -136,7 +132,21 @@ class ReflexAgent(Agent):
         if not ghostScaredTimer or ghostScaredTimer[index] > 0:
           distances.append(manhattanDistance(newPos, ghostsPos[index]))
       return ghostsPos[distances.index(min(distances))]
+    
+    def ghostNorm(self, currentGameState, legalMoves):
+      distant = 0
+      for action in legalMoves:
+        successorGameState = currentGameState.generatePacmanSuccessor(action)
+        newPos = successorGameState.getPacmanPosition()
+        ghostsPos = successorGameState.getGhostPositions()
+        for index in range(len(ghostsPos)):
+          d = manhattanDistance(newPos, ghostsPos[index])
+          if d > distant:
+            distant = d
       
+      return distant
+
+
     def anyScaredTimer(self, newScaredTimes):
       return sum(newScaredTimes) > 0
 
