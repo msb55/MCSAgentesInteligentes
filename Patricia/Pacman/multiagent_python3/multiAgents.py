@@ -222,8 +222,54 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        alpha = -float("inf")
+        beta = float("inf")
+        depth = 0
+        score, action = self.minMax(gameState, depth, alpha, beta)
+        
+        return action
 
+    def minMax(self, gameState, depth, alpha, beta, agent=0):
+        agent, depth = self.getAgent(gameState, agent, depth)
+        if self.isTerminal(gameState) or depth == self.depth:
+            return (self.evaluationFunction(gameState), "Stop")
+
+        bestScore = -float("inf") if agent == 0 else float("inf")
+        bestAction = "Stop"
+
+        legalMoves = gameState.getLegalActions(agent)
+        for action in legalMoves:
+          successorGameState = gameState.generateSuccessor(agentIndex=agent, action=action)
+          newState =  self.minMax(successorGameState, depth, alpha, beta, agent+1)
+
+          if agent == 0: #MAX
+            if newState[0] > bestScore:
+              bestScore = newState[0]
+              bestAction = action
+            if bestScore > beta:
+              return (bestScore, action)
+            alpha = max(alpha, newState[0])
+
+          else: #MIN
+            if newState[0] < bestScore:
+                bestScore = newState[0]
+                bestAction = action
+            if bestScore < alpha:
+              return (bestScore, action)
+            beta = min(beta, newState[0])
+
+        return (bestScore, bestAction)
+
+    def isTerminal(self, gameState):
+      return gameState.isWin() or gameState.isLose()
+
+    def getAgent(self, gameState, agent,depth):
+      if agent >= gameState.getNumAgents():
+        return 0, depth+1
+      return agent, depth
+
+  
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
