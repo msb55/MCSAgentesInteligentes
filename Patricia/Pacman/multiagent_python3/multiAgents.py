@@ -277,13 +277,48 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
     def getAction(self, gameState):
         """
-          Returns the expectimax action using self.depth and self.evaluationFunction
-
-          All ghosts should be modeled as choosing uniformly at random from their
-          legal moves.
+          Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        depth = 0
+        score, action = self.minMax(gameState, depth)
+
+        return action
+
+    def minMax(self, gameState, depth, agent=0):
+        agent, depth = self.getAgent(gameState, agent, depth)
+        if self.isTerminal(gameState) or depth == self.depth:
+            return (self.evaluationFunction(gameState), "Stop")
+
+        bestScore = -float("inf") if agent == 0 else 0
+        bestAction = "Stop"
+
+        legalMoves = gameState.getLegalActions(agent)
+        prob = 1.0/len(legalMoves)   
+        for action in legalMoves:
+          successorGameState = gameState.generateSuccessor(agentIndex=agent, action=action)
+          newState =  self.minMax(successorGameState, depth, agent+1)
+
+          if agent == 0: #MAX
+            if newState[0] > bestScore:
+              bestScore = newState[0]
+              bestAction = action
+
+          else: #Expect
+            bestScore += newState[0]*prob #UTILIDADE ESPERADA
+            bestAction = action
+
+        return (bestScore, bestAction)
+
+    def isTerminal(self, gameState):
+      return gameState.isWin() or gameState.isLose()
+
+    def getAgent(self, gameState, agent,depth):
+      if agent >= gameState.getNumAgents():
+        return 0, depth+1
+      return agent, depth
+
 
 def betterEvaluationFunction(currentGameState):
     """
