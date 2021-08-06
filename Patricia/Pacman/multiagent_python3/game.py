@@ -289,11 +289,13 @@ class Actions:
     A collection of static methods for manipulating move actions.
     """
     # Directions
-    _directions = {Directions.NORTH: (0, 1),
-                   Directions.SOUTH: (0, -1),
-                   Directions.EAST:  (1, 0),
+    _directions = {
                    Directions.WEST:  (-1, 0),
-                   Directions.STOP:  (0, 0)}
+                   Directions.STOP:  (0, 0),
+                   Directions.EAST:  (1, 0),
+                   Directions.NORTH: (0, 1),
+                   Directions.SOUTH: (0, -1),
+                   }
 
     _directionsAsList = _directions.items()
 
