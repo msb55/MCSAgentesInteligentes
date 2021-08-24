@@ -226,7 +226,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         alpha = -float("inf")
         beta = float("inf")
         depth = 0
-        score, action = self.minMax(gameState, depth, alpha, beta)
+        score, action = self.minMax(gameState, depth, alpha, beta, self.index)
         
         return action
 
@@ -282,7 +282,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         "*** YOUR CODE HERE ***"
 
         depth = 0
-        score, action = self.minMax(gameState, depth)
+        score, action = self.minMax(gameState, depth, self.index)
 
         return action
 
