@@ -34,7 +34,8 @@ import pacman
 #
 import testClasses
 from game import Agent
-from ghostAgents import DirectionalGhost, RandomGhost
+from ghostAgents import (RandomGhost, DirectionalGhost, 
+                         AlphaBetaGhost, ExpectimaxGhost)
 from pacman import GameState
 
 # import grading
@@ -300,6 +301,9 @@ class PacmanGameTreeTest(testClasses.TestCase):
         self.layout_name = self.testDict['layoutName']
         self.depth = int(self.testDict['depth'])
         self.max_points = int(self.testDict['max_points'])
+        if self.alg == 'ExpectimaxAgent': self.ghostAgent = ExpectimaxGhost
+        elif self.alg == 'AlphaBetaAgent': self.ghostAgent = AlphaBetaGhost
+        else: self.ghostAgent = DirectionalGhost
 
     def execute(self, grades, moduleDict, solutionDict):
         # load student code and staff code solutions
@@ -314,7 +318,7 @@ class PacmanGameTreeTest(testClasses.TestCase):
         pac = GradingAgent(self.seed, studentAgent, allActions, altDepthActions, partialPlyBugActions)
         # check return codes and assign grades
         disp = self.question.getDisplay()
-        stats = run(lay, self.layout_name, pac, [DirectionalGhost(i + 1) for i in range(2)], disp, name=self.alg)
+        stats = run(lay, self.layout_name, pac, [self.ghostAgent(i + 1) for i in range(2)], disp, name=self.alg)
         if stats['timeouts'] > 0:
             self.addMessage('Agent timed out on smallClassic.  No credit')
             return self.testFail(grades)
@@ -362,7 +366,7 @@ class PacmanGameTreeTest(testClasses.TestCase):
             ourPacOptions = {}
         pac = PolyAgent(self.seed, multiAgents, ourPacOptions, self.depth)
         disp = self.question.getDisplay()
-        run(lay, self.layout_name, pac, [DirectionalGhost(i + 1) for i in range(2)], disp, name=self.alg)
+        run(lay, self.layout_name, pac, [self.ghostAgent(i + 1) for i in range(2)], disp, name=self.alg)
         (optimalActions, altDepthActions, partialPlyBugActions) = pac.getTraces()
         # recover traces and record to file
         handle = open(filePath, 'w')
