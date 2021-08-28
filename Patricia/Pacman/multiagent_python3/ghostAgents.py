@@ -19,6 +19,12 @@ import random
 from util import manhattanDistance
 import util
 
+# Comunicação entre os fantasmas para evitar caminhos repetidos
+communication_logs = {}
+
+# Comunicação entre os fantasmas para armazenar estados já calculados
+communication_action_history = {}
+
 class GhostAgent( Agent ):
     def __init__( self, index ):
         self.index = index
@@ -86,15 +92,17 @@ class ExpectimaxGhost( GhostAgent ):
         self.index = index
 
     def getDistribution( self, state ):
-
+        global communication_logs
+        communication_logs.update({self.index:state.getGhostPosition(self.index)})
         # Read variables from state
         legalActions = state.getLegalActions( self.index )
         ghostState = state.getGhostState(self.index)
         isScared = ghostState.scaredTimer > 0
 
         # Select best actions given the state
-        _, bestActions = self.getActionExpectimax(state, self.index, isScared)
+        _, bestActions, nextState = self.getActionExpectimax(state, self.index, isScared)
         bestProb = 1
+        communication_logs.update({self.index:nextState})
 
         # Construct distribution
         dist = util.Counter()
@@ -107,37 +115,51 @@ class ExpectimaxGhost( GhostAgent ):
         self.agent = agent
         self.max_depth = 3
         depth = 0
-        score, action = self.minMax(State, depth, agent, isScared)
-        return score, [action]
+        score, action, nextState = self.ExpectiMax(State, depth, agent, isScared)
+        return score, [action], nextState
 
-    def minMax(self, gameState, depth,  agent, isScared):
-       # agent, depth = getAgent(gameState, agent, depth)
+    def ExpectiMax(self, gameState, depth,  agent, isScared):
+        global communication_logs
         depth += 1
         if  isTerminal(gameState):
             return (-float("inf") if gameState.isWin() else float("inf"), "Stop")
         if depth == self.max_depth:
             return (-eval(gameState, agent, isScared), "Stop")
 
+        # Check for solution in game history database
+        solution = gameSolutionsHistory("getSolution", gameState, agent)
+        if solution: return solution
+
         bestScore = 0 if agent == 0 else -float("inf")
+
         legalMoves = gameState.getLegalActions(agent)
         bestAction = legalMoves[0]
+        bestState = getAgentPosition(
+            gameState.generateSuccessor(agentIndex=agent, action=bestAction), agent)
 
-        prob = 1.0/len(legalMoves)   
+        prob = 1.0/len(legalMoves)
         for action in legalMoves:
           successorGameState = gameState.generateSuccessor(agentIndex=agent, action=action)
+          nextState = getAgentPosition(successorGameState, agent)
+          if nextState in communication_logs.values():
+                continue
           new_agent = 0 if agent!= 0 else self.agent
-          newState =  self.minMax(successorGameState, depth, new_agent, isScared)
-
+          newState =  self.ExpectiMax(successorGameState, depth, new_agent, isScared)
           if agent != 0: #MAX
             if newState[0] > bestScore:
               bestScore = newState[0]
               bestAction = action
+              bestState = nextState
 
           else: #Expect
             bestScore += newState[0]*prob #UTILIDADE ESPERADA
             bestAction = action
+            bestState = nextState
 
-        return (bestScore, bestAction)
+        gameSolutionsHistory("setSolution", gameState, agent, 
+                                  (bestScore, bestAction, bestState))
+        return (bestScore, bestAction, bestState)
+
 
 
 class AlphaBetaGhost( GhostAgent ):
@@ -146,6 +168,8 @@ class AlphaBetaGhost( GhostAgent ):
         self.index = index
 
     def getDistribution( self, state ):
+        global communication_logs
+        communication_logs.update({self.index:state.getGhostPosition(self.index)})
 
         # Read variables from state
         legalActions = state.getLegalActions( self.index )
@@ -153,8 +177,9 @@ class AlphaBetaGhost( GhostAgent ):
         isScared = ghostState.scaredTimer > 0
 
         # Select best actions given the state
-        bestScore, bestActions = self.getActionAlphaBeta(state, self.index, isScared)
+        _, bestActions, nextState = self.getActionAlphaBeta(state, self.index, isScared)
         bestProb = 1
+        communication_logs.update({self.index:nextState})
 
         # Construct distribution
         dist = util.Counter()
@@ -170,25 +195,34 @@ class AlphaBetaGhost( GhostAgent ):
         max_depth = 3
         depth = 0
         self.agent = agent
-        score, action = self.minMax(State, depth, max_depth, alpha, beta, agent, isScared)
-        return score, [action]
+        score, action, nextState = self.minMax(State, depth, max_depth, alpha, beta, agent, isScared)
+        return score, [action], nextState
 
     def minMax(self, gameState, depth, max_depth, alpha, beta, agent, isScared):
+        global communication_logs
         depth += 1
         if isTerminal(gameState):
             return (-float("inf") if gameState.isWin() else float("inf"), "Stop")
         if depth == max_depth:
             return (-eval(gameState, agent, isScared), "Stop")
        
+        # Check for solution in game history database
+        solution = gameSolutionsHistory("getSolution", gameState, agent)
+        if solution: return solution
+
         bestScore = float("inf") if agent == 0 else -float("inf")
         legalMoves = gameState.getLegalActions(agent)
         bestAction = legalMoves[0]
+        bestState = getAgentPosition(
+            gameState.generateSuccessor(agentIndex=agent, action=bestAction), agent)
 
         for action in legalMoves:
           successorGameState = gameState.generateSuccessor(agentIndex=agent, action=action)
+          nextState = getAgentPosition(successorGameState, agent)
+          if nextState in communication_logs.values():
+                continue
           new_agent = 0 if agent!= 0 else self.agent
           newState =  self.minMax(successorGameState, depth, max_depth, alpha, beta, new_agent, isScared)
-
           if agent != 0: #MAX
             if newState[0] > bestScore:
               bestScore = newState[0]
@@ -205,11 +239,45 @@ class AlphaBetaGhost( GhostAgent ):
               return (bestScore, action)
             beta = min(beta, newState[0])
 
-        return (bestScore, bestAction)
-   
+        gameSolutionsHistory("setSolution", gameState, agent, 
+                                  (bestScore, bestAction, bestState))
+
+        return (bestScore, bestAction, bestState)
+
+
 def eval(gameState, agent, isScared):
     pac = gameState.getPacmanPosition()
-    return manhattanDistance(gameState.getGhostPosition(agent), pac)
+    if agent != 0:
+        return manhattanDistance(gameState.getGhostPosition(agent), pac)
+    else:
+        closest = getClosestGhost(gameState)
+        return manhattanDistance(closest, pac)
+
+
+def getClosestGhost(state):
+      distances = []
+      ghostStates = state.getGhostStates()
+      pac = state.getPacmanPosition()
+      ghostsPos = state.getGhostPositions()
+      for index in range(len(ghostsPos)):
+          distances.append(manhattanDistance(pac, ghostsPos[index]))
+      return ghostsPos[distances.index(min(distances))]
 
 def isTerminal(gameState):
       return gameState.isWin() or gameState.isLose()
+
+def gameSolutionsHistory(method, gameState, agent, solution=None):
+    if agent == 0:
+        return
+    global communication_action_history
+    pac_pos = gameState.getPacmanPosition()
+    direction = gameState.getGhostState(agent).configuration.direction
+    positions = (pac_pos, gameState.getGhostPosition(agent), direction)
+    if method == "getSolution" and positions in communication_action_history:
+        return communication_action_history[positions]
+    if method == "setSolution":
+        communication_action_history.update({positions: solution})
+
+
+def getAgentPosition(state, agent):
+    return state.getGhostPosition(agent) if agent != 0 else state.getPacmanPosition()
