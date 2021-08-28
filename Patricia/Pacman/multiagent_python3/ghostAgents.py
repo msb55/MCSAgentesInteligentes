@@ -114,11 +114,11 @@ class ExpectimaxGhost( GhostAgent ):
        # agent, depth = getAgent(gameState, agent, depth)
         depth += 1
         if  isTerminal(gameState):
-            return (float("inf") if gameState.isWin() else -float("inf"), "Stop")
+            return (-float("inf") if gameState.isWin() else float("inf"), "Stop")
         if depth == self.max_depth:
-            return (eval(gameState, agent, isScared), "Stop")
+            return (-eval(gameState, agent, isScared), "Stop")
 
-        bestScore = -float("inf") if agent == 0 else 0
+        bestScore = 0 if agent == 0 else -float("inf")
         legalMoves = gameState.getLegalActions(agent)
         bestAction = legalMoves[0]
 
@@ -128,7 +128,7 @@ class ExpectimaxGhost( GhostAgent ):
           new_agent = 0 if agent!= 0 else self.agent
           newState =  self.minMax(successorGameState, depth, new_agent, isScared)
 
-          if agent == 0: #MAX
+          if agent != 0: #MAX
             if newState[0] > bestScore:
               bestScore = newState[0]
               bestAction = action
@@ -176,11 +176,11 @@ class AlphaBetaGhost( GhostAgent ):
     def minMax(self, gameState, depth, max_depth, alpha, beta, agent, isScared):
         depth += 1
         if isTerminal(gameState):
-            return (float("inf") if gameState.isWin() else -float("inf"), "Stop")
+            return (-float("inf") if gameState.isWin() else float("inf"), "Stop")
         if depth == max_depth:
-            return (eval(gameState, agent, isScared), "Stop")
+            return (-eval(gameState, agent, isScared), "Stop")
        
-        bestScore = -float("inf") if agent == 0 else float("inf")
+        bestScore = float("inf") if agent == 0 else -float("inf")
         legalMoves = gameState.getLegalActions(agent)
         bestAction = legalMoves[0]
 
@@ -189,7 +189,7 @@ class AlphaBetaGhost( GhostAgent ):
           new_agent = 0 if agent!= 0 else self.agent
           newState =  self.minMax(successorGameState, depth, max_depth, alpha, beta, new_agent, isScared)
 
-          if agent == 0: #MAX
+          if agent != 0: #MAX
             if newState[0] > bestScore:
               bestScore = newState[0]
               bestAction = action
@@ -209,24 +209,7 @@ class AlphaBetaGhost( GhostAgent ):
    
 def eval(gameState, agent, isScared):
     pac = gameState.getPacmanPosition()
-    if agent != 0:
-        return manhattanDistance(gameState.getGhostPosition(agent), pac)
-    else:
-        closest = closestGhost(pac, gameState.getGhostPositions())
-        dist = manhattanDistance(closest, pac)
-        return dist * -1 if isScared else dist
-
-def closestGhost(newPos, ghostsPos, ghostScaredTimer=None):
-    distances = []
-    for index in range(len(ghostsPos)):
-        if not ghostScaredTimer or ghostScaredTimer[index] > 0:
-            distances.append(manhattanDistance(newPos, ghostsPos[index]))
-    return ghostsPos[distances.index(min(distances))]
-
-def getAgent(gameState, agent,depth):
-    if agent >= gameState.getNumAgents():
-        return 0, depth+1
-    return agent, depth
+    return manhattanDistance(gameState.getGhostPosition(agent), pac)
 
 def isTerminal(gameState):
       return gameState.isWin() or gameState.isLose()
