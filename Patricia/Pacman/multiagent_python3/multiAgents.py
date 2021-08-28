@@ -13,6 +13,7 @@
 
 
 import random
+import sys
 
 import util
 from game import Agent, Directions
@@ -222,7 +223,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        
+        if '--ghost' in sys.argv:
+          return random.choice(gameState.getLegalActions())
+
         alpha = -float("inf")
         beta = float("inf")
         depth = 0
@@ -280,6 +283,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+
+        if '--ghost' in sys.argv:
+          return random.choice(gameState.getLegalActions())
 
         depth = 0
         score, action = self.minMax(gameState, depth, self.index)

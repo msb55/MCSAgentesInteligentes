@@ -75,6 +75,10 @@ def readCommand(argv):
                     dest = 'noGraphics',
                     action = 'store_true',
                     help = 'No graphics display for pacman games.')
+    parser.add_option('--ghost',
+                    dest = '',
+                    action = 'store_true',
+                    help = 'No graphics display for pacman games.')
     (options, args) = parser.parse_args(argv)
     return options
 

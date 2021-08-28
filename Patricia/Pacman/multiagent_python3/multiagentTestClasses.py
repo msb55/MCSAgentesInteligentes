@@ -301,9 +301,10 @@ class PacmanGameTreeTest(testClasses.TestCase):
         self.layout_name = self.testDict['layoutName']
         self.depth = int(self.testDict['depth'])
         self.max_points = int(self.testDict['max_points'])
-        if self.alg == 'ExpectimaxAgent': self.ghostAgent = ExpectimaxGhost
-        elif self.alg == 'AlphaBetaAgent': self.ghostAgent = AlphaBetaGhost
-        else: self.ghostAgent = DirectionalGhost
+        self.ghostAgent = DirectionalGhost
+        if '--ghost' in sys.argv:
+            if self.alg == 'ExpectimaxAgent': self.ghostAgent = ExpectimaxGhost
+            elif self.alg == 'AlphaBetaAgent': self.ghostAgent = AlphaBetaGhost
 
     def execute(self, grades, moduleDict, solutionDict):
         # load student code and staff code solutions
